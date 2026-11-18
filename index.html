@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#122239">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>移動城堡大戰</title>
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./icon-180.png">
+<link rel="icon" href="./icon-192.png">
+<link rel="stylesheet" href="./style.css">
+</head>
+<body>
+<main class="game">
+  <header class="hud">
+    <div class="team blue">
+      <div class="team-label"><b>🔷 藍色城堡</b><span id="hp0"></span></div>
+      <div class="meter"><i id="bar0"></i></div>
+      <div class="power"><span id="energy0"></span><div class="energy"><i id="charge0"></i></div></div>
+    </div>
+    <div class="round"><b id="stage"></b><span id="area"></span></div>
+    <div class="team red">
+      <div class="team-label"><b>🔶 紅色城堡</b><span id="hp1"></span></div>
+      <div class="meter"><i id="bar1"></i></div>
+      <div class="power"><span id="energy1"></span><div class="energy"><i id="charge1"></i></div></div>
+    </div>
+    <div class="settings">
+      <button id="pause" aria-label="暫停" title="暫停（Esc）">Ⅱ</button>
+      <button id="sound" aria-label="切換音效" aria-pressed="false" title="切換音效">🔇</button>
+    </div>
+  </header>
+  <section id="arena" aria-label="戰鬥場地">
+    <div class="scenery" aria-hidden="true"></div>
+    <div class="track" aria-hidden="true"></div>
+    <div id="castle0" class="castle player"></div>
+    <div id="castle1" class="castle enemy"></div>
+    <canvas id="effects" aria-hidden="true"></canvas>
+    <div id="overlay" class="overlay">
+      <section class="panel" aria-labelledby="panel-title">
+        <div id="panel-content"></div>
+      </section>
+    </div>
+  </section>
+  <footer class="deck">
+    <div class="deck-heading"><b>武器控制台</b><span id="hint" aria-live="polite">點武器或城堡隊員出招</span></div>
+    <div id="weapons" class="weapons"></div>
+  </footer>
+</main>
+<script type="module" src="./main.js"></script>
+</body>
+</html>
