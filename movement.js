@@ -6,8 +6,13 @@ export function moveCastle(position, direction, seconds, bounds) {
   return Math.max(left, Math.min(right, position + direction * MOVEMENT.speed * seconds));
 }
 
+export function stepCastle(position, direction, bounds) {
+  return moveCastle(position,direction,MOVEMENT.step/MOVEMENT.speed,bounds);
+}
+
 export function createMovement(player, enemy, controls) {
   const pointers = new Map();
+  const label = controls.querySelector('b');
   const keys = new Map();
   const arrows = { ArrowLeft:-1, ArrowRight:1 };
   let position;
@@ -24,6 +29,12 @@ export function createMovement(player, enemy, controls) {
   function place(next) {
     position = next;
     player.style.translate = `${position - player.offsetLeft}px 0`;
+    const limits = bounds();
+    label.textContent = position >= moveCastle(Infinity,0,0,limits) ? '已到前線' : '城堡移動';
+  }
+
+  function nudge(direction) {
+    place(stepCastle(position ?? player.offsetLeft,direction,bounds()));
   }
   const observer = new ResizeObserver(() => {
     if (position !== undefined) place(moveCastle(position,0,0,bounds()));
@@ -37,7 +48,9 @@ export function createMovement(player, enemy, controls) {
       if (!enabled || event.button !== 0) return;
       event.preventDefault();
       button.setPointerCapture(event.pointerId);
-      pointers.set(event.pointerId,Number(button.dataset.move));
+      const direction = Number(button.dataset.move);
+      pointers.set(event.pointerId,direction);
+      nudge(direction);
       button.dataset.held = '';
     });
     for (const type of ['pointerup','pointercancel','lostpointercapture']) {
@@ -46,10 +59,17 @@ export function createMovement(player, enemy, controls) {
         if (![...pointers.values()].includes(Number(button.dataset.move))) button.removeAttribute('data-held');
       });
     }
+    button.addEventListener('click',event => {
+      if (enabled && event.detail === 0 && !event.pointerType) nudge(Number(button.dataset.move));
+    });
     button.addEventListener('keydown',event => {
       if (!enabled || ![' ','Enter'].includes(event.key)) return;
       event.preventDefault();
-      if (!event.repeat) keys.set(event.key,Number(button.dataset.move));
+      if (!event.repeat) {
+        const direction = Number(button.dataset.move);
+        keys.set(event.key,direction);
+        nudge(direction);
+      }
     });
     button.addEventListener('keyup',event => {
       if ([' ','Enter'].includes(event.key)) keys.delete(event.key);
@@ -59,7 +79,10 @@ export function createMovement(player, enemy, controls) {
   document.addEventListener('keydown',event => {
     if (!enabled || !arrows[event.key] || event.altKey || event.ctrlKey || event.metaKey) return;
     event.preventDefault();
-    if (!event.repeat) keys.set(event.key,arrows[event.key]);
+    if (!event.repeat) {
+      keys.set(event.key,arrows[event.key]);
+      nudge(arrows[event.key]);
+    }
   });
   document.addEventListener('keyup',event => keys.delete(event.key));
   window.addEventListener('blur',clear);

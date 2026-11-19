@@ -146,6 +146,7 @@ function start() {
   seenBriefings.add(stage.number);
   $('briefing').innerHTML = `<div class="briefing-card"><strong>第 ${stage.number} 關</strong><span>${stage.name}</span>
     <small>攻擊力 ×${stage.power.toFixed(2)} · ${stage.playerHp} HP</small>
+    <small>開戰後，輕點前進走一步，按住繼續走</small>
     ${fresh ? weaponNotice(fresh) : ''}</div>`;
   introRemaining = fresh ? 2.2 : 1.25;
   setState('intro');

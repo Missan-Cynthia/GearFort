@@ -5,7 +5,7 @@ import { availability, advanceBattle, createBattle, useWeapon } from './combat.j
 import { enemyTurn } from './ai.js';
 import { drawLandscape } from './backgrounds.js';
 import { drawEnemy } from './models.js';
-import { moveCastle } from './movement.js';
+import { moveCastle, stepCastle } from './movement.js';
 
 const maxStage = LEVELS.at(-1);
 const equalPowerStage = {...maxStage, playerHp:1000, enemyHp:1000, power:1, enemyPower:1};
@@ -128,6 +128,9 @@ test('lethal impact finalizes either outcome and records effective player damage
 test('movement stops on release and clamps both sides without overlapping the enemy', () => {
   const bounds = { start:28,width:240,enemy:590 };
   assert.ok(moveCastle(28,1,.2,bounds)>28);
+  assert.equal(stepCastle(28,1,bounds),54);
+  assert.equal(stepCastle(54,-1,bounds),28);
+  assert.equal(stepCastle(328,1,bounds),332);
   assert.equal(moveCastle(120,0,1,bounds),120);
   assert.equal(moveCastle(120,-1,999,bounds),4);
   assert.equal(moveCastle(120,1,999,bounds),332);

@@ -15,7 +15,7 @@ export const UNLOCKS = [
   ['light',1], ['heavy',2], ['repair',3], ['shield',4], ['rocket',5], ['emp',6], ['bomb',7]
 ];
 
-export const MOVEMENT = Object.freeze({ speed:190, wall:4, gap:18 });
+export const MOVEMENT = Object.freeze({ speed:190, step:26, wall:4, gap:18 });
 
 export const DIFFICULTIES = {
   '簡單': { shieldChance:0, repairAt:0 },

@@ -1,5 +1,5 @@
 const PREFIX = 'moving-castle-';
-const CACHE = PREFIX + 'v1.1.0:' + self.registration.scope;
+const CACHE = PREFIX + 'v1.1.1:' + self.registration.scope;
 const SHELL = [
   './','./index.html','./style.css','./main.js','./config.js','./eligibility.js',
   './damage.js','./combat.js','./ai.js','./art.js','./backgrounds.js','./models.js',
