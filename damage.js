@@ -1,4 +1,4 @@
-import { RULES, WEAPONS } from './config.js';
+import { WEAPONS } from './config.js';
 
 export function resolveImpact(target, weapon, time, multiplier) {
   const factor = target.shieldUntil > time ? 1 - WEAPONS.shield.reduction : 1;
@@ -9,7 +9,7 @@ export function resolveImpact(target, weapon, time, multiplier) {
 }
 
 export function repairCastle(target, weapon) {
-  const healed = Math.min(weapon.heal, RULES.hp - target.hp);
+  const healed = Math.min(weapon.heal, target.maxHp - target.hp);
   target.hp += healed;
   return healed;
 }

@@ -2,7 +2,7 @@ import { WEAPONS } from './config.js';
 
 const COLORS = { light:'#ffd494',heavy:'#ff8b50',rocket:'#ff6048',bomb:'#ffb245',emp:'#aa99ff',shield:'#7be8ff',repair:'#8df593' };
 
-export function createEffects(canvas, castles) {
+export function createEffects(canvas, castles, playerOffset = () => 0) {
   const ctx = canvas.getContext('2d');
   const effects = [];
   let width = 0;
@@ -23,7 +23,7 @@ export function createEffects(canvas, castles) {
     const castle = castles[side];
     const fraction = muzzle ? .88 : .52;
     return [
-      castle.offsetLeft + castle.offsetWidth * (side === 0 ? fraction : 1-fraction),
+      castle.offsetLeft + (side === 0 ? playerOffset() : 0) + castle.offsetWidth * (side === 0 ? fraction : 1-fraction),
       castle.offsetTop + castle.offsetHeight * (muzzle ? .54 : .55)
     ];
   }
@@ -44,7 +44,7 @@ export function createEffects(canvas, castles) {
   }
   function projectile(event,p) {
     const {side,key} = event;
-    const [x,y] = point(side,true);
+    const [x,y] = event.origin;
     const [tx,ty] = point(1-side);
     const dir = side === 0 ? 1 : -1;
     const px = x + (tx-x)*p;
@@ -138,7 +138,8 @@ export function createEffects(canvas, castles) {
           element.classList.add(className);
         }
       }
-      if (event.type !== 'fire' || WEAPONS[event.key].flight) effects.push(event);
+      if (event.type !== 'fire') effects.push(event);
+      else if (WEAPONS[event.key].flight) effects.push({ ...event, origin:point(event.side,true) });
     },
     clear() { effects.length = 0; ctx.clearRect(0,0,width,height); },
     render(battle,time = battle.time) {

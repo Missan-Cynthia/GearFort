@@ -1,23 +1,24 @@
-import { RULES, WEAPONS } from './config.js';
+import { LEVELS, RULES, WEAPONS, weaponsFor } from './config.js';
 import { attackEligibility } from './eligibility.js';
 import { repairCastle, resolveImpact } from './damage.js';
 
-function castle() {
-  return { hp:RULES.hp, energy:RULES.energy, ready:{}, shieldUntil:0, stunUntil:0 };
+function castle(hp, power) {
+  return { hp, maxHp:hp, power, energy:RULES.energy, ready:{}, shieldUntil:0, stunUntil:0 };
 }
 
-export function createBattle() {
-  return { castles:[castle(),castle()], time:0, pending:[], attacks:0, damage:0, winner:null };
+export function createBattle(level = LEVELS[0]) {
+  return { level, weapons:weaponsFor(level.number), castles:[castle(level.playerHp,level.power),castle(level.enemyHp,level.enemyPower)], time:0, pending:[], attacks:0, damage:0, winner:null };
 }
 
 export function availability(battle, side, key) {
   const actor = battle.castles[side];
   const weapon = WEAPONS[key];
   if (!weapon || battle.winner !== null) return '戰鬥結束';
+  if (!battle.weapons.includes(key)) return '尚未解鎖';
   if (weapon.damage && actor.stunUntil > battle.time) return '電磁干擾';
   if ((actor.ready[key] ?? 0) > battle.time) return '冷卻中';
   if (actor.energy + 1e-8 < weapon.cost) return '能量不足';
-  if (weapon.heal && actor.hp === RULES.hp) return '生命已滿';
+  if (weapon.heal && actor.hp === actor.maxHp) return '生命已滿';
   return '';
 }
 
@@ -33,7 +34,7 @@ export function useWeapon(battle, side, key, emit = () => {}) {
   emit({ type:'fire', side, key, time:battle.time });
   if (weapon.damage) {
     if (side === 0) battle.attacks++;
-    battle.pending.push({ side,key,due:battle.time + weapon.flight,multiplier:qualification.multiplier ?? 1 });
+    battle.pending.push({ side,key,due:battle.time + weapon.flight,multiplier:actor.power * (qualification.multiplier ?? 1) });
     battle.pending.sort((a,b) => a.due - b.due);
   } else if (weapon.heal) {
     emit({type:'heal',side,amount:repairCastle(actor,weapon),time:battle.time});
