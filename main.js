@@ -31,6 +31,8 @@ let state = '';
 let nextEnemy = 0;
 let resultDelay = 0;
 let introRemaining = 0;
+let registration;
+let updateReady = false;
 let newlyUnlocked;
 const seenBriefings = new Set();
 let hintUntil = 0;
@@ -106,9 +108,9 @@ function update() {
 function setState(mode) {
   state = mode;
   movement.enable(mode === 'battle');
-  $('briefing').hidden = mode !== 'intro';
+  $('briefing').hidden = mode !== 'battle' || introRemaining <= 0;
   game.classList.toggle('playing',mode === 'battle' || mode === 'ending');
-  overlay.hidden = ['battle','ending','intro'].includes(mode);
+  overlay.hidden = ['battle','ending'].includes(mode);
   $('pause').disabled = mode !== 'battle' && mode !== 'pause';
   $('pause').textContent = mode === 'pause' ? '▶' : 'Ⅱ';
   $('pause').setAttribute('aria-label',mode === 'pause' ? '繼續' : '暫停');
@@ -124,10 +126,12 @@ function showHome(focus = true) {
   hintUntil = 0;
   hint.textContent = '點武器或城堡隊員出招';
   syncLevel();
+  introRemaining = 0;
   setState('home');
+  applyUpdate();
   const stages = LEVELS.map(({name,difficulty},i) => `<button class="level" data-level="${i}" aria-label="第 ${i+1} 關，${name}，${difficulty}" aria-pressed="${i===level}" ${i>progress.unlocked?'disabled':''}>${i+1}</button>`).join('');
   showPanel(`<h1 id="panel-title">GearFort</h1>
-    <p>${battle.level.name} · ${battle.level.difficulty} · V1.1</p>
+    <p>${battle.level.name} · ${battle.level.difficulty} · V1.1.2</p>
     <div class="levels" aria-label="選擇關卡">${stages}</div>
     <div class="actions"><button class="primary" data-action="start">開始戰鬥</button>
     ${installPrompt ? '<button class="secondary" data-action="install">安裝遊戲</button>' : ''}</div>`,focus);
@@ -146,12 +150,10 @@ function start() {
   seenBriefings.add(stage.number);
   $('briefing').innerHTML = `<div class="briefing-card"><strong>第 ${stage.number} 關</strong><span>${stage.name}</span>
     <small>攻擊力 ×${stage.power.toFixed(2)} · ${stage.playerHp} HP</small>
-    <small>開戰後，輕點前進走一步，按住繼續走</small>
+    <small>輕點前進走一步，按住繼續走</small>
     ${fresh ? weaponNotice(fresh) : ''}</div>`;
   introRemaining = fresh ? 2.2 : 1.25;
-  setState('intro');
-}
-function beginBattle() {
+
   setState('battle');
   if (!matchMedia('(pointer: coarse)').matches) controls[0].button.focus({preventScroll:true});
 }
@@ -202,10 +204,11 @@ function finish() {
 function frame(now) {
   const dt = previousFrame === undefined ? 0 : Math.min(.1,(now-previousFrame)/1000);
   previousFrame = now;
-  if (state === 'intro') {
-    introRemaining -= dt;
-    if (introRemaining <= 0) beginBattle();
-  } else if (state === 'battle') {
+  if (state === 'battle' && !document.hidden) {
+    if (introRemaining > 0) {
+      introRemaining -= dt;
+      if (introRemaining <= 0) $('briefing').hidden = true;
+    }
     movement.tick(dt);
     advanceBattle(battle,dt,emit);
     if (battle.winner !== null) {
@@ -223,7 +226,7 @@ function frame(now) {
     }
     effects.render(battle);
     update();
-  } else if (state === 'ending') {
+  } else if (state === 'ending' && !document.hidden) {
     resultDelay += dt;
     effects.render(battle,battle.time + resultDelay);
     if (resultDelay >= .89) finish();
@@ -277,7 +280,12 @@ document.addEventListener('keydown',event => {
   if (state === 'battle' && /^[1-7]$/.test(event.key)) tryWeapon(battle.weapons[Number(event.key)-1]);
 });
 document.addEventListener('visibilitychange',() => {
-  if (document.hidden && state === 'battle') togglePause();
+  previousFrame = undefined;
+  if (state === 'battle') movement.enable(!document.hidden);
+  if (!document.hidden) {
+    applyUpdate();
+    registration?.update().catch(() => {});
+  }
 });
 window.addEventListener('beforeinstallprompt',event => {
   event.preventDefault();
@@ -288,8 +296,24 @@ window.addEventListener('appinstalled',() => {
   installPrompt = undefined;
   if (state === 'home') showHome(false);
 });
+function applyUpdate() {
+  if (updateReady && state === 'home' && !document.hidden) {
+    updateReady = false;
+    location.reload();
+  }
+}
+
 if ('serviceWorker' in navigator && location.protocol !== 'file:') {
-  navigator.serviceWorker.register('./sw.js').catch(error => console.warn('離線快取啟用失敗',error));
+  let previousController = navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange',() => {
+    const controller = navigator.serviceWorker.controller;
+    if (previousController && controller !== previousController) updateReady = true;
+    previousController = controller;
+    applyUpdate();
+  });
+  navigator.serviceWorker.register('./sw.js',{updateViaCache:'none'})
+    .then(value => { registration = value; })
+    .catch(error => console.warn('離線快取啟用失敗',error));
 }
 syncSound();
 showHome(false);
